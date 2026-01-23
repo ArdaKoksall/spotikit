@@ -12,7 +12,7 @@ Thanks for your interest in contributing! This guide explains the preferred work
 ## Workflow
 1. Fork repository
 2. Create a feature branch: `feat/<short-description>`
-3. Implement changes + update/add docs under `docs/` or README sections
+3. Implement changes + update/add docs under `doc/` or README sections
 4. Update example app if the API surface changes
 5. Run analyzer & format
 6. Test example manually on device/emulator

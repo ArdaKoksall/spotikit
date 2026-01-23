@@ -42,21 +42,25 @@ Trim to the minimum you actually need.
 Quick steps:
 1. Add to `pubspec.yaml`:
    ```yaml
-dependencies:
-  spotikit: ^0.0.24
+   dependencies:
+     spotikit: ^1.0.0
    ```
 2. Fetch packages:
    ```
-flutter pub get
+   flutter pub get
    ```
-3. IMPORTANT (one‑time per clone / after cleaning android dir): run the init script so the Spotify AARs are downloaded & Gradle includes are inserted at the top of `android/settings.gradle`:
+3. **IMPORTANT** (one-time per clone / after cleaning android dir): run the init script so the Spotify AARs are downloaded & Gradle includes are inserted at the top of `android/settings.gradle`:
    ```
-dart run spotikit:android_init
+   dart run spotikit:android_init
    ```
-   If you skip this, Gradle will fail because the required `spotify-app-remote` and `spotify-auth` modules won’t exist.
-4. (Optional) If Gradle metadata gets messy or you want to re‑download AARs, clean with:
+   By default, this uses `spotify-sdk://auth` as the redirect URI. To use a custom redirect URI:
    ```
-dart run spotikit:android_clean && dart run spotikit:android_init
+   dart run spotikit:android_init --fallback-url=your.app://callback
+   ```
+   If you skip this, Gradle will fail because the required `spotify-app-remote` and `spotify-auth` modules won't exist.
+4. (Optional) If Gradle metadata gets messy or you want to re-download AARs, clean with:
+   ```
+   dart run spotikit:android_clean && dart run spotikit:android_init
    ```
 5. Ensure `minSdkVersion >= 21`.
 

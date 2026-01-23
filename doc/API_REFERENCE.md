@@ -1,4 +1,6 @@
-# Spotikit API Reference (High-Level)
+# Spotikit API Reference
+
+> **Version 1.0.0** - First stable release
 
 This document summarizes the primary Dart API surface. For detailed usage see README and example app.
 
