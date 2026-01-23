@@ -23,7 +23,7 @@ const String spotifyAppRemoteGradlePath =
     'android/spotify-app-remote/build.gradle';
 const String spotifyAuthGradlePath = 'android/spotify-auth/build.gradle';
 
-//todo add manıfest placeholders
+//todo add manifest placeholders
 Future<void> main(List<String> args) async {
   print('🎵 Initializing Spotikit Android setup...\n');
 

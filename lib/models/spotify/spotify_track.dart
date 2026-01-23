@@ -1,4 +1,3 @@
-import 'package:spotikit/log/spotikit_log.dart';
 import 'package:flutter/foundation.dart';
 
 import 'album_image.dart';
@@ -48,7 +47,6 @@ class SpotifyTrack {
             : null,
       );
     } catch (e) {
-      SpotikitLog.error('Error parsing SpotifyTrack from JSON: $e');
       return null;
     }
   }

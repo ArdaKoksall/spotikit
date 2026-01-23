@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotikit/models/auth_state.dart';
 import 'package:spotikit/models/spotify/playback_state.dart';
 import 'package:spotikit/spotikit.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Spotikit.enableLogging();
+  await dotenv.load();
   runApp(const SpotikitExampleApp());
 }
 
@@ -48,15 +49,18 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
   );
   Timer? _progressTicker;
 
+  final Spotikit _spotikit = Spotikit.instance;
+
   @override
   void initState() {
     super.initState();
-    _listen();
+    _spotikit.enableLogging();
     _init();
+    _listen();
   }
 
   void _listen() {
-    _authSub = Spotikit.onAuthStateChanged.listen((s) {
+    _authSub = _spotikit.onAuthStateChanged.listen((s) {
       setState(() => _authState = s);
       if (s is AuthSuccess) {
         _statusMsg('Authenticated');
@@ -67,19 +71,19 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
         _statusMsg('Auth cancelled');
       }
     });
-    _playbackSub = Spotikit.onPlaybackStateChanged.listen((ps) {
+    _playbackSub = _spotikit.onPlaybackStateChanged.listen((ps) {
       setState(() => _playbackState = ps);
     });
   }
 
   Future<void> _init() async {
     if (_initialized) return;
-    // TODO: Replace with your real credentials and consider secure storage / dart-define.
-    const clientId = 'YOUR_CLIENT_ID';
-    const redirectUri = 'your.app://callback';
-    const clientSecret = 'YOUR_CLIENT_SECRET';
+    // TODO: Replace with your real credentials.
+    final clientId = dotenv.env['SPOTIFY_CLIENT_ID']!;
+    final redirectUri = dotenv.env['SPOTIFY_REDIRECT_URI']!;
+    final clientSecret = dotenv.env['SPOTIFY_CLIENT_SECRET']!;
 
-    final ok = await Spotikit.initialize(
+    final ok = await _spotikit.initialize(
       clientId: clientId,
       redirectUri: redirectUri,
       clientSecret: clientSecret,
@@ -90,13 +94,13 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
       return;
     }
     _statusMsg('Initialized, authenticating…');
-    await Spotikit.authenticateSpotify();
+    await _spotikit.authenticateSpotify();
   }
 
   Future<void> _connectRemote() async {
     if (_connectingRemote) return;
     setState(() => _connectingRemote = true);
-    final ok = await Spotikit.connectToSpotify();
+    final ok = await _spotikit.connectToSpotify();
     _statusMsg(ok ? 'Remote connected' : 'Remote connect failed');
     setState(() => _connectingRemote = false);
   }
@@ -109,22 +113,22 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
   Future<void> _playUri() async {
     final uri = _uriCtrl.text.trim();
     if (uri.isEmpty) return;
-    await Spotikit.playUri(spotifyUri: uri);
+    await _spotikit.playUri(spotifyUri: uri);
   }
 
   Future<void> _playSearch() async {
     final q = _searchCtrl.text.trim();
     if (q.isEmpty) return;
-    await Spotikit.playSong(query: q);
+    await _spotikit.playSong(query: q);
   }
 
   Future<void> _togglePlayPause() async {
     final ps = _playbackState;
     if (ps == null) return;
     if (ps.isPaused) {
-      await Spotikit.resume();
+      await _spotikit.resume();
     } else {
-      await Spotikit.pause();
+      await _spotikit.pause();
     }
   }
 
@@ -132,7 +136,7 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     final ps = _playbackState;
     if (ps == null) return;
     final positionMs = (v * ps.durationMs).round();
-    await Spotikit.seekTo(positionMs: positionMs);
+    await _spotikit.seekTo(positionMs: positionMs);
   }
 
   void _startProgressTicker() {
@@ -235,6 +239,17 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            //image of the track if available
+            if (ps?.imageUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Image.network(
+                  ps!.imageUrl!,
+                  height: 150,
+                  width: 150,
+                  fit: BoxFit.cover,
+                ),
+              ),
             Row(
               children: [
                 const Text(
@@ -273,7 +288,7 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => Spotikit.previousTrack(),
+                    onPressed: () => _spotikit.previousTrack(),
                     icon: const Icon(Icons.skip_previous),
                   ),
                   IconButton(
@@ -286,18 +301,18 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
                     iconSize: 40,
                   ),
                   IconButton(
-                    onPressed: () => Spotikit.skipTrack(),
+                    onPressed: () => _spotikit.skipTrack(),
                     icon: const Icon(Icons.skip_next),
                   ),
                   const SizedBox(width: 12),
                   IconButton(
                     tooltip: 'Back 5s',
-                    onPressed: () => Spotikit.skipBackward(seconds: 5),
+                    onPressed: () => _spotikit.skipBackward(seconds: 5),
                     icon: const Icon(Icons.replay_5),
                   ),
                   IconButton(
                     tooltip: 'Fwd 5s',
-                    onPressed: () => Spotikit.skipForward(seconds: 5),
+                    onPressed: () => _spotikit.skipForward(seconds: 5),
                     icon: const Icon(Icons.forward_5),
                   ),
                 ],

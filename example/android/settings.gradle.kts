@@ -1,3 +1,5 @@
+include(":spotify-app-remote")
+include(":spotify-auth")
 pluginManagement {
     val flutterSdkPath = run {
         val properties = java.util.Properties()

@@ -1,45 +1,58 @@
 import 'package:dio/dio.dart';
 import 'package:spotikit/models/spotify/spotify_track.dart';
 
-const String _baseUrl = "https://api.spotify.com/v1/";
-
 enum SearchType { album, artist, playlist, track, show, episode, audiobook }
 
 class SpotifyApi {
-  final Dio _dio;
-  SpotifyApi() : _dio = Dio(BaseOptions(baseUrl: _baseUrl));
+  static const String _baseUrl = 'https://api.spotify.com/v1/';
 
-  Future<SpotifyTrack?> getTrackById({
-    required String id,
-    required String accessToken,
-  }) async {
-    try {
-      final response = await _dio.get(
-        'tracks/$id',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          },
+  final Dio _dio;
+  String? _accessToken;
+
+  SpotifyApi()
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: _baseUrl,
+          headers: {'Content-Type': 'application/json'},
         ),
-      );
+      ) {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (_accessToken != null) {
+            options.headers['Authorization'] = 'Bearer $_accessToken';
+            return handler.next(options);
+          } else {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                error: 'Access token is not set.',
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void setAccessToken(String? token) {
+    _accessToken = token;
+  }
+
+  Future<SpotifyTrack?> getTrackById({required String id}) async {
+    try {
+      final response = await _dio.get('tracks/$id');
 
       if (response.statusCode == 200) {
         return SpotifyTrack.fromJson(response.data);
-      } else {
-        print(
-          'Spotify API returned status code ${response.statusCode}, message ${response.statusMessage}',
-        );
-        return null;
       }
+
+      print(
+        'Spotify API returned ${response.statusCode}: ${response.statusMessage}',
+      );
+      return null;
     } on DioException catch (e) {
-      if (e.response != null) {
-        print(
-          'Spotify API error: ${e.response?.statusCode} - ${e.response?.data}',
-        );
-      } else {
-        print('Spotify API error: ${e.message}');
-      }
+      _logDioError(e);
       return null;
     } catch (e) {
       print('Unexpected error: $e');
@@ -50,7 +63,6 @@ class SpotifyApi {
   Future<dynamic> search({
     required String query,
     required SearchType type,
-    required String accessToken,
     int limit = 20,
     int offset = 0,
   }) async {
@@ -59,34 +71,22 @@ class SpotifyApi {
         'search',
         queryParameters: {
           'q': query,
-          'type': type.toString(),
+          'type': type.name,
           'limit': limit,
           'offset': offset,
         },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          },
-        ),
       );
 
       if (response.statusCode == 200) {
         return response.data;
-      } else {
-        print(
-          'Spotify API returned status code ${response.statusCode}, message ${response.statusMessage}',
-        );
-        return null;
       }
+
+      print(
+        'Spotify API returned ${response.statusCode}: ${response.statusMessage}',
+      );
+      return null;
     } on DioException catch (e) {
-      if (e.response != null) {
-        print(
-          'Spotify API error: ${e.response?.statusCode} - ${e.response?.data}',
-        );
-      } else {
-        print('Spotify API error: ${e.message}');
-      }
+      _logDioError(e);
       return null;
     } catch (e) {
       print('Unexpected error: $e');
@@ -94,25 +94,23 @@ class SpotifyApi {
     }
   }
 
-  Future<String?> searchAndGetFirstTrackId({
-    required String query,
-    required String accessToken,
-  }) async {
-    final result = await search(
-      query: query,
-      type: SearchType.track,
-      accessToken: accessToken,
-      limit: 1,
-    );
+  Future<String?> searchAndGetFirstTrackId({required String query}) async {
+    final result = await search(query: query, type: SearchType.track, limit: 1);
 
-    if (result != null &&
-        result['tracks'] != null &&
-        result['tracks']['items'] != null &&
-        result['tracks']['items'].isNotEmpty) {
-      return  result['tracks']['items'][0]['id'];
+    final items = result?['tracks']?['items'];
+    if (items != null && items.isNotEmpty) {
+      return items[0]['id'];
+    }
+
+    print('No tracks found for query: $query');
+    return null;
+  }
+
+  void _logDioError(DioException e) {
+    if (e.response != null) {
+      print('Spotify API error ${e.response?.statusCode}: ${e.response?.data}');
     } else {
-      print('No tracks found for query: $query');
-      return null;
+      print('Spotify API error: ${e.message}');
     }
   }
 }

@@ -8,7 +8,7 @@ class SpotifyPlaybackState {
   final bool isPaused;
   final int positionMs;
   final int durationMs;
-  final String? imageUri; // Raw image URI from Spotify SDK (if provided)
+  final String? imageUrl; // Raw image URI from Spotify SDK (if provided)
 
   const SpotifyPlaybackState({
     required this.uri,
@@ -17,7 +17,7 @@ class SpotifyPlaybackState {
     required this.isPaused,
     required this.positionMs,
     required this.durationMs,
-    this.imageUri,
+    this.imageUrl,
   });
 
   factory SpotifyPlaybackState.fromMap(Map<dynamic, dynamic> map) {
@@ -28,21 +28,20 @@ class SpotifyPlaybackState {
       isPaused: map['isPaused'] as bool,
       positionMs: map['positionMs'] as int,
       durationMs: map['durationMs'] as int,
-      imageUri: map['imageUri'] as String?,
+      imageUrl: map['imageUri'] as String?,
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'uri': uri,
-        'name': name,
-        'artist': artist,
-        'isPaused': isPaused,
-        'positionMs': positionMs,
-        'durationMs': durationMs,
-        'imageUri': imageUri,
-      };
+    'uri': uri,
+    'name': name,
+    'artist': artist,
+    'isPaused': isPaused,
+    'positionMs': positionMs,
+    'durationMs': durationMs,
+    'imageUrl': imageUrl,
+  };
 
   double get progress => durationMs == 0 ? 0 : positionMs / durationMs;
   String get id => uri.split(":").last;
 }
-
