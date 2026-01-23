@@ -77,21 +77,31 @@ Intent filter (only if you changed the default scheme/host):
 ---
 ## Quick Start
 ```dart
+import 'package:spotikit/spotikit.dart';
+import 'package:spotikit/models/auth_state.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Spotikit.enableLogging();
+  
+  final spotikit = Spotikit.instance;
+  spotikit.configureLogging(loggingEnabled: true);
 
-  await Spotikit.initialize(
+  await spotikit.initialize(
     clientId: 'YOUR_CLIENT_ID',
     clientSecret: 'YOUR_CLIENT_SECRET',
     redirectUri: 'your.app://callback',
   );
 
-  await Spotikit.authenticateSpotify();
-  await Spotikit.connectToSpotify();
-  await Spotikit.playUri(spotifyUri: 'spotify:track:11dFghVXANMlKmJXsNCbNl');
+  spotikit.onAuthStateChanged.listen((state) async {
+    if (state is AuthSuccess) {
+      await spotikit.connectToSpotify();
+      await spotikit.playUri(spotifyUri: 'spotify:track:4cOdK2wGLETKBW3PvgPWqT');
+    }
+  });
 
-  Spotikit.onPlaybackStateChanged.listen((state) {
+  await spotikit.authenticateSpotify();
+
+  spotikit.onPlaybackStateChanged.listen((state) {
     print('Now playing: ${state.name} by ${state.artist} ${(state.progress * 100).toStringAsFixed(1)}%');
   });
 }
@@ -100,17 +110,16 @@ void main() async {
 ---
 ## Auth State Stream
 ```dart
-Spotikit.onAuthStateChanged.listen((auth) {
-  switch (auth) {
+final spotikit = Spotikit.instance;
+
+spotikit.onAuthStateChanged.listen((state) {
+  switch (state) {
     case AuthSuccess(:final accessToken):
       print('Authenticated. Token: $accessToken');
-      break;
     case AuthFailure(:final error, :final message):
-      print('Auth failed: $error $message');
-      break;
+      print('Auth failed: $error ${message ?? ''}');
     case AuthCancelled():
       print('User cancelled Spotify login');
-      break;
   }
 });
 ```
@@ -118,27 +127,29 @@ Spotikit.onAuthStateChanged.listen((auth) {
 ---
 ## Playback State Stream
 ```dart
-final sub = Spotikit.onPlaybackStateChanged.listen((s) {
-  print('Track: ${s.name} | Paused: ${s.isPaused} | Position: ${s.positionMs}/${s.durationMs}');
+final spotikit = Spotikit.instance;
+
+final sub = spotikit.onPlaybackStateChanged.listen((state) {
+  print('Track: ${state.name} | Paused: ${state.isPaused} | Position: ${state.positionMs}/${state.durationMs}');
 });
 ```
-Fields: `uri`, `name`, `artist`, `isPaused`, `positionMs`, `durationMs`, `imageUri`, helpers: `progress`, `id`.
+Fields: `uri`, `name`, `artist`, `isPaused`, `positionMs`, `durationMs`, `imageUrl`, helpers: `progress`, `id`.
 
 ---
 ## Core Control APIs
 | Action | Method |
 |--------|--------|
-| Play by URI | `Spotikit.playUri(spotifyUri: ...)` |
-| Pause / Resume | `pause()` / `resume()` |
-| Next / Previous | `skipTrack()` / `previousTrack()` |
-| Seek absolute | `seekTo(positionMs: ...)` |
-| Skip fwd/back seconds | `skipForward(seconds: ...)` / `skipBackward(seconds: ...)` |
-| Playing (basic) | `getPlayingTrackInfo()` |
-| Full metadata | `getPlayingTrackFull()` |
-| Search & play first | `playSong(query: ...)` |
-| Is playing? | `isPlaying()` |
-| Disconnect | `disconnect()` |
-| Logout (clear tokens) | `logout()` |
+| Play by URI | `spotikit.playUri(spotifyUri: ...)` |
+| Pause / Resume | `spotikit.pause()` / `spotikit.resume()` |
+| Next / Previous | `spotikit.skipTrack()` / `spotikit.previousTrack()` |
+| Seek absolute | `spotikit.seekTo(positionMs: ...)` |
+| Skip fwd/back seconds | `spotikit.skipForward(seconds: ...)` / `spotikit.skipBackward(seconds: ...)` |
+| Playing (basic) | `spotikit.getPlayingTrackInfo()` |
+| Full metadata | `spotikit.getPlayingTrackFull()` |
+| Search & play first | `spotikit.playSong(query: ...)` |
+| Is playing? | `spotikit.isPlaying()` |
+| Disconnect | `spotikit.disconnect()` |
+| Logout (clear tokens) | `spotikit.logout()` |
 
 ---
 ## Example App

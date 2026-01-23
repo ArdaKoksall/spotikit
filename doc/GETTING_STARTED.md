@@ -50,48 +50,64 @@ Add if you use a custom redirect URI (replace values accordingly):
 
 ## 5. Initialize & Authenticate
 ```dart
+import 'package:flutter/material.dart';
+import 'package:spotikit/spotikit.dart';
+import 'package:spotikit/models/auth_state.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Spotikit.enableLogging();
+  
+  final spotikit = Spotikit.instance;
+  spotikit.configureLogging(loggingEnabled: true);
 
-  await Spotikit.initialize(
+  await spotikit.initialize(
     clientId: 'YOUR_CLIENT_ID',
     clientSecret: 'YOUR_CLIENT_SECRET',
     redirectUri: 'your.app://callback',
   );
 
-  Spotikit.onAuthStateChanged.listen((state) async {
+  spotikit.onAuthStateChanged.listen((state) async {
     if (state is AuthSuccess) {
-      await Spotikit.connectToSpotify();
-      await Spotikit.playUri(spotifyUri: 'spotify:track:11dFghVXANMlKmJXsNCbNl');
+      await spotikit.connectToSpotify();
+      await spotikit.playUri(spotifyUri: 'spotify:track:4cOdK2wGLETKBW3PvgPWqT');
     }
   });
 
-  await Spotikit.authenticateSpotify();
+  await spotikit.authenticateSpotify();
+  
+  runApp(const MyApp());
 }
 ```
 
 ## 6. Listen to Playback State
 ```dart
-Spotikit.onPlaybackStateChanged.listen((s) {
-  print('Now: ${s.name} by ${s.artist}');
+final spotikit = Spotikit.instance;
+
+spotikit.onPlaybackStateChanged.listen((state) {
+  print('Now: ${state.name} by ${state.artist}');
 });
 ```
 
 ## 7. Play by Search Query
 ```dart
-await Spotikit.playSong(query: 'Where is my mind');
+final spotikit = Spotikit.instance;
+
+await spotikit.playSong(query: 'Where is my mind');
 ```
 
 ## 8. Fetch Full Track Metadata
 ```dart
-final full = await Spotikit.getPlayingTrackFull();
-print(full?.albumName);
+final spotikit = Spotikit.instance;
+
+final track = await spotikit.getPlayingTrackFull();
+print(track?.albumName);
 ```
 
 ## 9. Logout
 ```dart
-await Spotikit.logout();
+final spotikit = Spotikit.instance;
+
+await spotikit.logout();
 ```
 
 ## 10. Minimal Error Handling

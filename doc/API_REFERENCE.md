@@ -4,45 +4,51 @@
 
 This document summarizes the primary Dart API surface. For detailed usage see README and example app.
 
+## Getting the Instance
+```dart
+final spotikit = Spotikit.instance;
+```
+
 ## Initialization & Auth
 | Method | Description |
 |--------|-------------|
-| `Spotikit.initialize({clientId, clientSecret, redirectUri, scope})` | Initializes plugin & stores config. Must be called once. |
-| `Spotikit.authenticateSpotify()` | Launches Spotify login (Authorization Code). Emits auth state events. |
-| `Spotikit.onAuthStateChanged` | Stream emitting `AuthSuccess`, `AuthFailure`, `AuthCancelled`. |
-| `Spotikit.getAccessToken()` | Returns (possibly refreshed) access token used for Web API calls. |
-| `Spotikit.logout()` | Disconnect + clear tokens. |
+| `spotikit.initialize({clientId, clientSecret, redirectUri, scope})` | Initializes plugin & stores config. Must be called once. |
+| `spotikit.authenticateSpotify()` | Launches Spotify login (Authorization Code). Emits auth state events. |
+| `spotikit.onAuthStateChanged` | Stream emitting `AuthSuccess`, `AuthFailure`, `AuthCancelled`. |
+| `spotikit.getAccessToken()` | Returns (possibly refreshed) access token used for Web API calls. |
+| `spotikit.logout()` | Disconnect + clear tokens. |
+| `spotikit.configureLogging({loggingEnabled, errorLoggingEnabled})` | Enable/disable logging. |
 
 ## Connection / Remote
 | Method | Description |
 |--------|-------------|
-| `Spotikit.connectToSpotify()` | Connects App Remote (control channel). |
-| `Spotikit.disconnect()` | Disconnects remote. |
+| `spotikit.connectToSpotify()` | Connects App Remote (control channel). Returns `true` if successful. |
+| `spotikit.disconnect()` | Disconnects remote. |
 
 ## Playback Control
 | Method | Description |
 |--------|-------------|
-| `Spotikit.playUri({spotifyUri})` | Start playback for given URI. |
-| `Spotikit.pause()` | Pause current track. |
-| `Spotikit.resume()` | Resume playback. |
-| `Spotikit.skipTrack()` | Skip to next track. |
-| `Spotikit.previousTrack()` | Previous track. |
-| `Spotikit.isPlaying()` | Boolean playback status (true if not paused). |
-| `Spotikit.seekTo({positionMs})` | Seek to absolute position (milliseconds). |
-| `Spotikit.skipForward({seconds})` | Relative forward seek (default 5s). |
-| `Spotikit.skipBackward({seconds})` | Relative backward seek (floor at 0). |
+| `spotikit.playUri({spotifyUri})` | Start playback for given URI. |
+| `spotikit.pause()` | Pause current track. |
+| `spotikit.resume()` | Resume playback. |
+| `spotikit.skipTrack()` | Skip to next track. |
+| `spotikit.previousTrack()` | Previous track. |
+| `spotikit.isPlaying()` | Boolean playback status (true if not paused). |
+| `spotikit.seekTo({positionMs})` | Seek to absolute position (milliseconds). |
+| `spotikit.skipForward({seconds})` | Relative forward seek (default 5s). |
+| `spotikit.skipBackward({seconds})` | Relative backward seek (floor at 0). |
 
 ## Playback State & Metadata
 | Method / Stream | Description |
 |-----------------|-------------|
-| `Spotikit.onPlaybackStateChanged` | Stream of `SpotifyPlaybackState` (realtime). |
-| `Spotikit.getPlayingTrackInfo()` | Basic playing info (artist, name, uri, paused). |
-| `Spotikit.getPlayingTrackFull()` | Full track metadata via Web API (album name, images, etc.). |
+| `spotikit.onPlaybackStateChanged` | Stream of `SpotifyPlaybackState` (realtime). |
+| `spotikit.getPlayingTrackInfo()` | Basic playing info (artist, name, uri, paused). |
+| `spotikit.getPlayingTrackFull()` | Full track metadata via Web API (album name, images, etc.). |
 
 ## Search & Content
 | Method | Description |
 |--------|-------------|
-| `Spotikit.playSong({query})` | Search for first track and play it. |
+| `spotikit.playSong({query})` | Search for first track and play it. |
 
 ## Models
 ### AuthState
@@ -59,9 +65,9 @@ This document summarizes the primary Dart API surface. For detailed usage see RE
 | isPaused | bool | Playback paused flag |
 | positionMs | int | Current position in track |
 | durationMs | int | Track duration |
-| imageUri | String? | Raw image URI from App Remote |
-| progress | double | position / duration (0..1) |
-| id | String | Track ID extracted from URI |
+| imageUrl | String? | Raw image URL from App Remote |
+| progress | double | Computed: positionMs / durationMs (0..1) |
+| id | String | Computed: Track ID extracted from URI |
 
 ### SpotifyTrack (from Web API)
 Includes: id, name, artistName, albumName, durationMs, popularity, explicit, externalUrl, releaseDate, albumImages.

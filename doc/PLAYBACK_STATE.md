@@ -2,7 +2,7 @@
 
 > **Version 1.0.0** - First stable release
 
-`Spotikit.onPlaybackStateChanged` emits `SpotifyPlaybackState` objects whenever the Spotify App Remote SDK reports a change.
+`Spotikit.instance.onPlaybackStateChanged` emits `SpotifyPlaybackState` objects whenever the Spotify App Remote SDK reports a change.
 
 ## Emission Triggers
 - Track changes (new URI)
@@ -19,26 +19,31 @@
 | `isPaused` | True if playback is paused |
 | `positionMs` | Current position within the track (ms) |
 | `durationMs` | Track duration (ms) |
-| `imageUri` | Raw image URI (can be resolved through App Remote image API in future) |
-| `progress` | Convenience getter: `positionMs / durationMs` (0..1) |
-| `id` | Track ID extracted from URI |
+| `imageUrl` | Raw image URL (can be resolved through App Remote image API in future) |
+| `progress` | Computed getter: `positionMs / durationMs` (0..1) |
+| `id` | Computed getter: Track ID extracted from URI |
 
 ## Example Usage
 ```dart
-final sub = Spotikit.onPlaybackStateChanged.listen((state) {
+final spotikit = Spotikit.instance;
+
+final sub = spotikit.onPlaybackStateChanged.listen((state) {
   final pct = (state.progress * 100).toStringAsFixed(1);
   debugPrint('Playing ${state.name} by ${state.artist} ($pct%)');
 });
 ```
 
 ## Recommended UI Pattern
-Use stream subscription + a periodic timer (e.g. 500ms) while playing to animate progress smoothly between native updates.
+Use stream subscription + a periodic timer (e.g. 200ms) while playing to animate progress smoothly between native updates.
 
 ```dart
+final spotikit = Spotikit.instance;
+SpotifyPlaybackState? playback;
 Timer? ticker;
-final sub = Spotikit.onPlaybackStateChanged.listen((s) {
-  setState(() => playback = s);
-  ticker ??= Timer.periodic(const Duration(milliseconds: 500), (_) {
+
+final sub = spotikit.onPlaybackStateChanged.listen((state) {
+  setState(() => playback = state);
+  ticker ??= Timer.periodic(const Duration(milliseconds: 200), (_) {
     if (playback == null || playback!.isPaused) return;
     setState(() {}); // rebuild progress slider
   });

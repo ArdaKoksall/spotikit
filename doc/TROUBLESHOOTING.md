@@ -35,13 +35,15 @@
 ## Logging
 Enable early:
 ```dart
-Spotikit.enableLogging();
+final spotikit = Spotikit.instance;
+spotikit.configureLogging(loggingEnabled: true);
 ```
 Logs include auth, connection, and error diagnostics.
 
 ## Reset State
 ```dart
-await Spotikit.logout(); // clears tokens, disconnects
+final spotikit = Spotikit.instance;
+await spotikit.logout(); // clears tokens, disconnects
 ```
 
 ## Still Stuck?
