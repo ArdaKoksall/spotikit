@@ -1,5 +1,7 @@
 # Playback State Stream
 
+> **Version 1.0.0** - First stable release
+
 `Spotikit.onPlaybackStateChanged` emits `SpotifyPlaybackState` objects whenever the Spotify App Remote SDK reports a change.
 
 ## Emission Triggers

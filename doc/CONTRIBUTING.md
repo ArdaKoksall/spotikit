@@ -1,5 +1,7 @@
 # Contributing to Spotikit
 
+> **Version 1.0.0** - First stable release
+
 Thanks for your interest in contributing! This guide explains the preferred workflow.
 
 ## Development Environment

@@ -2,6 +2,7 @@ library;
 
 import 'dart:async';
 import 'package:logger/logger.dart';
+import 'package:spotikit/models/spotikit_exception.dart';
 
 import 'api/spotify_api.dart';
 import 'models/auth_state.dart';
@@ -13,6 +14,18 @@ import 'platform/spotikit_platform_interface.dart';
 export 'platform/spotikit_platform_interface.dart';
 export 'platform/spotikit_method_channel.dart';
 
+/// The main entry point for the Spotikit plugin.
+///
+/// Use [Spotikit.instance] to access the singleton instance.
+///
+/// Example:
+/// ```dart
+/// await Spotikit.instance.initialize(
+///   clientId: 'your_client_id',
+///   redirectUri: 'your_redirect_uri',
+///   clientSecret: 'your_client_secret',
+/// );
+/// ```
 class Spotikit {
   static final Spotikit instance = Spotikit.internal();
   factory Spotikit() => instance;
@@ -26,66 +39,75 @@ class Spotikit {
   final _SpotikitLog _log = _SpotikitLog();
 
   final SpotifyApi _api = SpotifyApi();
+
+  /// Access to the Spotify Web API wrapper.
   SpotifyApi get api => _api;
 
-  /// Returns the platform-specific implementation.
   SpotikitPlatform get _platform => SpotikitPlatform.instance;
 
+  /// Stream of access tokens from the native platform.
   Stream<String?> get accessTokenStream => _platform.accessTokenStream;
 
+  /// Stream of authentication state updates from the native platform.
   Stream<AuthState> get onAuthStateChanged => _platform.authStateStream;
+
+  /// Stream of playback state updates from the native platform.
   Stream<SpotifyPlaybackState> get onPlaybackStateChanged =>
       _platform.playbackStateStream;
 
   static const String _defaultScope =
       "user-read-playback-state user-modify-playback-state user-read-currently-playing app-remote-control streaming playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-library-modify user-library-read user-top-read user-read-playback-position user-read-recently-played user-follow-read user-follow-modify user-read-email user-read-private";
 
-  Future<bool> initialize({
+  /// Initializes the Spotikit plugin with the required configuration.
+  ///
+  /// [clientId] - Spotify application client ID
+  /// [redirectUri] - OAuth redirect URI
+  /// [clientSecret] - Spotify application client secret
+  /// [scope] - OAuth scopes for authorization (defaults to all common scopes)
+  /// [authenticate] - Whether to start authentication immediately
+  /// [connectToRemote] - Whether to connect to Spotify App Remote immediately
+  ///
+  /// Throws [SpotikitException] if initialization fails.
+  Future<void> initialize({
     required String clientId,
     required String redirectUri,
     required String clientSecret,
     String scope = _defaultScope,
+    bool authenticate = false,
+    bool connectToRemote = false,
   }) async {
     try {
-      final result = await _platform.initialize(
+      await _platform.initialize(
         clientId: clientId,
         redirectUri: redirectUri,
         clientSecret: clientSecret,
         scope: scope,
+        authenticate: authenticate,
+        connectToRemote: connectToRemote,
       );
-      if (result) {
-        _log.log("Spotikit initialized successfully.");
-      }
-      return result;
+      _log.log("Spotikit initialized successfully.");
     } catch (e) {
-      _log.error("Error during initialization: $e");
+      throw SpotikitException('Failed to initialize Spotikit: $e');
     }
-    return false;
   }
 
-  Future<void> fullInitialize({
-    required String clientId,
-    required String redirectUri,
-    required String clientSecret,
-    String scope = _defaultScope,
-  }) async {
-    await initialize(
-      clientId: clientId,
-      redirectUri: redirectUri,
-      clientSecret: clientSecret,
-      scope: scope,
+  /// Configures logging options.
+  ///
+  /// [loggingEnabled] - Enable or disable general logging (default: false)
+  /// [errorLoggingEnabled] - Enable or disable error logging (default: true)
+  void configureLogging({
+    bool loggingEnabled = false,
+    bool errorLoggingEnabled = true,
+  }) {
+    _log.logConfig(
+      loggingEnabled: loggingEnabled,
+      errorLoggingEnabled: errorLoggingEnabled,
     );
-    if (!await authenticateSpotify()) return;
-    if (!await connectToSpotify()) return;
-
-    _log.log("Spotikit initialized and connected to remote successfully.");
   }
 
-  void enableLogging() {
-    _log.enableLogging();
-  }
-
-
+  /// Connects to the Spotify App Remote.
+  ///
+  /// Returns `true` if connection was successful or already connected.
   Future<bool> connectToSpotify() async {
     try {
       final result = await _platform.connectToSpotify();
@@ -99,19 +121,23 @@ class Spotikit {
     return false;
   }
 
-  Future<bool> authenticateSpotify() async {
+  /// Initiates the Spotify OAuth authentication flow.
+  ///
+  /// This will open the Spotify app or a web view to authenticate the user.
+  Future<void> authenticateSpotify() async {
     try {
       final result = await _platform.authenticateSpotify();
       if (result) {
         _log.log("Spotify authentication started.");
       }
-      return result;
     } catch (e) {
       _log.error("Error during Spotify authentication: $e");
     }
-    return false;
   }
 
+  /// Retrieves the current access token.
+  ///
+  /// Returns `null` if no token is available.
   Future<String?> getAccessToken() async {
     try {
       return await _platform.getAccessToken();
@@ -121,6 +147,9 @@ class Spotikit {
     }
   }
 
+  /// Plays the specified Spotify URI.
+  ///
+  /// [spotifyUri] - The Spotify URI to play (e.g., 'spotify:track:xxx')
   Future<void> playUri({required String spotifyUri}) async {
     try {
       await _platform.playUri(spotifyUri: spotifyUri);
@@ -129,6 +158,7 @@ class Spotikit {
     }
   }
 
+  /// Pauses the current playback.
   Future<void> pause() async {
     try {
       await _platform.pause();
@@ -137,6 +167,7 @@ class Spotikit {
     }
   }
 
+  /// Resumes the current playback.
   Future<void> resume() async {
     try {
       await _platform.resume();
@@ -145,6 +176,7 @@ class Spotikit {
     }
   }
 
+  /// Skips to the next track.
   Future<void> skipTrack() async {
     try {
       await _platform.skipTrack();
@@ -153,6 +185,7 @@ class Spotikit {
     }
   }
 
+  /// Goes back to the previous track.
   Future<void> previousTrack() async {
     try {
       await _platform.previousTrack();
@@ -161,6 +194,9 @@ class Spotikit {
     }
   }
 
+  /// Gets basic information about the currently playing track.
+  ///
+  /// Returns `null` if no track is playing.
   Future<SpotifyTrackInfo?> getPlayingTrackInfo() async {
     try {
       return await _platform.getPlayingTrackInfo();
@@ -170,6 +206,12 @@ class Spotikit {
     }
   }
 
+  /// Gets full track information from Spotify Web API.
+  ///
+  /// This includes additional details like album images, popularity, etc.
+  /// Requires a valid access token.
+  ///
+  /// Returns `null` if no track is playing or if the API call fails.
   Future<SpotifyTrack?> getPlayingTrackFull() async {
     try {
       final trackInfo = await _platform.getPlayingTrackInfo();
@@ -190,6 +232,7 @@ class Spotikit {
     }
   }
 
+  /// Disconnects from the Spotify App Remote.
   Future<void> disconnect() async {
     try {
       await _platform.disconnect();
@@ -199,6 +242,7 @@ class Spotikit {
     }
   }
 
+  /// Logs out from Spotify and disconnects the App Remote.
   Future<void> logout() async {
     try {
       await _platform.logout();
@@ -207,6 +251,9 @@ class Spotikit {
     }
   }
 
+  /// Checks if music is currently playing.
+  ///
+  /// Returns `true` if playing, `false` otherwise.
   Future<bool> isPlaying() async {
     try {
       return await _platform.isPlaying();
@@ -216,6 +263,9 @@ class Spotikit {
     }
   }
 
+  /// Seeks to the specified position in the current track.
+  ///
+  /// [positionMs] - Position in milliseconds
   Future<void> seekTo({required int positionMs}) async {
     try {
       await _platform.seekTo(positionMs: positionMs);
@@ -224,6 +274,9 @@ class Spotikit {
     }
   }
 
+  /// Skips forward by the specified number of seconds.
+  ///
+  /// [seconds] - Number of seconds to skip forward (default: 5)
   Future<void> skipForward({int seconds = 5}) async {
     try {
       await _platform.skipForward(seconds: seconds);
@@ -232,6 +285,9 @@ class Spotikit {
     }
   }
 
+  /// Skips backward by the specified number of seconds.
+  ///
+  /// [seconds] - Number of seconds to skip backward (default: 5)
   Future<void> skipBackward({int seconds = 5}) async {
     try {
       await _platform.skipBackward(seconds: seconds);
@@ -240,6 +296,9 @@ class Spotikit {
     }
   }
 
+  /// Plays a song by searching for it using the Spotify Web API.
+  ///
+  /// [query] - Search query (e.g., "Shape of You Ed Sheeran")
   Future<void> playSong({required String query}) async {
     try {
       final searchResult = await _api.searchAndGetFirstTrackId(query: query);
@@ -282,16 +341,11 @@ class _SpotikitLog {
     }
   }
 
-  void enableLogging({bool errorLogging = true}) {
-    _loggingEnabled = true;
-    _errorLoggingEnabled = errorLogging;
-  }
-
-  void disableErrorLogging() {
-    _errorLoggingEnabled = false;
-  }
-
-  void disableLogging() {
-    _loggingEnabled = false;
+  void logConfig({
+    required bool loggingEnabled,
+    required bool errorLoggingEnabled,
+  }) {
+    _loggingEnabled = loggingEnabled;
+    _errorLoggingEnabled = errorLoggingEnabled;
   }
 }

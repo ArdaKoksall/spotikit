@@ -1,16 +1,37 @@
-# spotikit_example
+# Spotikit Example App
 
-Demonstrates how to use the spotikit plugin.
+Demonstrates how to use the spotikit plugin for Spotify integration on Android.
 
-## Getting Started
+## Setup
 
-This project is a starting point for a Flutter application.
+1. Get a Spotify Developer account at https://developer.spotify.com/dashboard
+2. Create an app and note your Client ID and Client Secret
+3. Add your redirect URI (e.g., `your.app://callback`) in the Spotify dashboard
+4. Create a `.env` file in this directory with your credentials:
+   ```
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   SPOTIFY_REDIRECT_URI=your.app://callback
+   ```
+5. Run the initialization script from the example directory:
+   ```
+   dart run spotikit:android_init
+   ```
 
-A few resources to get you started if this is your first Flutter project:
+## Running
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Features Demonstrated
+
+- Authentication with Spotify
+- Realtime playback state streaming
+- Play, pause, skip controls
+- Search and play functionality
+- Full track metadata retrieval
+
+## More Information
+
+See the main [Spotikit documentation](../doc/GETTING_STARTED.md) for detailed setup instructions.

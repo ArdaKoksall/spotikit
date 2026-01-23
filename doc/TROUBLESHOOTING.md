@@ -1,5 +1,7 @@
 # Troubleshooting
 
+> **Version 1.0.0** - First stable release
+
 ## Authentication Issues
 | Symptom | Cause | Fix |
 |---------|-------|-----|

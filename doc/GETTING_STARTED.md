@@ -1,5 +1,7 @@
 # Getting Started with Spotikit
 
+> **Version 1.0.0** - First stable release
+
 This guide walks you through minimal setup to authenticate and control Spotify playback on Android.
 
 ## 1. Prerequisites
@@ -10,7 +12,7 @@ This guide walks you through minimal setup to authenticate and control Spotify p
 ## 2. Install
 ```
 dependencies:
-  spotikit: ^0.0.24
+  spotikit: ^1.0.0
 ```
 
 ```

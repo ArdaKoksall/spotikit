@@ -80,7 +80,7 @@ Future improvements will introduce unified exception types & more transparent pr
 - `getAccessToken` triggers refresh if expired
 
 ## Limitations
-- Android only (iOS coming soon)
+- Android only (iOS planned for future release)
 - No queue, shuffle, repeat, volume APIs yet
 - No explicit EventChannel (uses invokeMethod callbacks for now)
 

@@ -9,10 +9,8 @@ import 'spotikit_platform_interface.dart';
 
 /// An implementation of [SpotikitPlatform] that uses method channels.
 class MethodChannelSpotikit extends SpotikitPlatform {
-  /// The method channel used to interact with the native platform.
   static const MethodChannel _channel = MethodChannel('spotikit');
 
-  /// The event channel for receiving access token updates.
   static const EventChannel _tokenEventChannel = EventChannel(
     'spotikit/token_stream',
   );
@@ -42,9 +40,7 @@ class MethodChannelSpotikit extends SpotikitPlatform {
           final map = call.arguments as Map<dynamic, dynamic>;
           final state = SpotifyPlaybackState.fromMap(map);
           _playbackController.add(state);
-        } catch (_) {
-          // Silently ignore parsing errors
-        }
+        } catch (_) {}
         break;
       case 'spotifyAuthSuccess':
         final args = call.arguments as Map;
@@ -80,23 +76,24 @@ class MethodChannelSpotikit extends SpotikitPlatform {
   Stream<AuthState> get authStateStream => _authController.stream;
 
   @override
-  Future<bool> initialize({
+  Future<void> initialize({
     required String clientId,
     required String redirectUri,
     required String clientSecret,
     required String scope,
+    required bool authenticate,
+    required bool connectToRemote,
   }) async {
-    try {
-      await _channel.invokeMethod('initialize', {
-        'clientId': clientId,
-        'redirectUri': redirectUri,
-        'clientSecret': clientSecret,
-        'scope': scope,
-      });
-      return true;
-    } catch (e) {
-      return false;
-    }
+    await _channel.invokeMethod('initialize', {
+      'clientId': clientId,
+      'redirectUri': redirectUri,
+      'clientSecret': clientSecret,
+      'scope': scope,
+      'authenticate': authenticate,
+      'connectToRemote': connectToRemote,
+    });
+    if (authenticate) await authenticateSpotify();
+    if (connectToRemote) await connectToSpotify();
   }
 
   @override
@@ -106,8 +103,8 @@ class MethodChannelSpotikit extends SpotikitPlatform {
         _Methods.connectToSpotify,
       );
       return result == "Connected" || result == "Already connected";
-    } catch (e) {
-      return false;
+    } catch (_) {
+      rethrow;
     }
   }
 
@@ -117,7 +114,7 @@ class MethodChannelSpotikit extends SpotikitPlatform {
       await _channel.invokeMethod(_Methods.authenticateSpotify);
       return true;
     } catch (e) {
-      return false;
+      rethrow;
     }
   }
 
@@ -193,7 +190,9 @@ class MethodChannelSpotikit extends SpotikitPlatform {
   @override
   Future<bool> isPlaying() async {
     try {
-      final bool? result = await _channel.invokeMethod<bool>(_Methods.isPlaying);
+      final bool? result = await _channel.invokeMethod<bool>(
+        _Methods.isPlaying,
+      );
       return result ?? false;
     } catch (e) {
       return false;
@@ -239,4 +238,3 @@ class _Methods {
   static const String skipBackward = 'skipBackward';
   static const String seekTo = 'seekTo';
 }
-

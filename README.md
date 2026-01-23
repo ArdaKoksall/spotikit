@@ -1,8 +1,11 @@
 # Spotikit
 
+[![pub package](https://img.shields.io/pub/v/spotikit.svg)](https://pub.dev/packages/spotikit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Flutter plugin for integrating Spotify on Android using both the Spotify App Remote SDK (realtime playback control/state) and the Spotify Web API (rich metadata, search, etc.).
 
-> Status: Experimental (v0.0.24). Android only for now. iOS support planned.
+> **Version 1.0.0** - First stable release! Android only for now. iOS support planned.
 
 ---
 ## Highlights (TL;DR)
@@ -185,7 +188,7 @@ dart run spotikit:android_clean  # Optional helper (then rerun android_init)
 
 ---
 ## License
-MIT © 2025 spotikit contributors
+MIT © 2026 spotikit contributors
 
 ---
 ## Attribution

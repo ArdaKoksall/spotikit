@@ -48,11 +48,13 @@ abstract class SpotikitPlatform extends PlatformInterface {
   /// [redirectUri] - OAuth redirect URI
   /// [clientSecret] - Spotify application client secret
   /// [scope] - OAuth scopes for authorization
-  Future<bool> initialize({
+  Future<void> initialize({
     required String clientId,
     required String redirectUri,
     required String clientSecret,
     required String scope,
+    required bool authenticate,
+    required bool connectToRemote,
   }) {
     throw UnimplementedError('initialize() has not been implemented.');
   }
