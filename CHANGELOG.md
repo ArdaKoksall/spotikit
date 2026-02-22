@@ -1,3 +1,13 @@
+## 2.0.1
+### 🛠 Example App Update — February 22, 2026
+
+- Updated example app to remove `flutter_dotenv` and all auth/Web API references
+- Credentials are now set as plain constants at the top of `example/lib/main.dart`
+- Quick Play chips now use hardcoded Spotify URIs instead of Web API search
+- Removed `.env` asset and `flutter_dotenv` dependency from example `pubspec.yaml`
+
+---
+
 ## 2.0.0
 ### 🚀 App Remote Only — February 22, 2026
 

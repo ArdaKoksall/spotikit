@@ -1,6 +1,6 @@
 name: spotikit
 description: "Flutter plugin for Spotify App Remote integration on Android."
-version: 2.0.0
+version: 2.0.1
 homepage: https://github.com/ArdaKoksall/spotikit
 issue_tracker: https://github.com/ArdaKoksall/spotikit
 repository: https://github.com/ArdaKoksall/spotikit

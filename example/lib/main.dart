@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:spotikit/models/auth_state.dart';
 import 'package:spotikit/models/spotify/playback_state.dart';
 import 'package:spotikit/spotikit.dart';
 
+// TODO: Replace with your own credentials from https://developer.spotify.com/dashboard
+const String _clientId = 'YOUR_CLIENT_ID';
+const String _redirectUri = 'spotify-sdk://auth';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
   runApp(const SpotikitExampleApp());
 }
 
@@ -39,86 +40,44 @@ class SpotikitHomePage extends StatefulWidget {
 }
 
 class _SpotikitHomePageState extends State<SpotikitHomePage> {
-  // Spotikit instance
   final Spotikit _spotikit = Spotikit.instance;
 
-  // Stream subscriptions
-  StreamSubscription<AuthState>? _authSub;
   StreamSubscription<SpotifyPlaybackState>? _playbackSub;
 
-  // State variables
-  AuthState? _authState;
   SpotifyPlaybackState? _playbackState;
   bool _isInitialized = false;
   bool _isRemoteConnected = false;
   bool _isLoading = false;
 
-  // Controllers
-  final TextEditingController _searchController = TextEditingController();
   final TextEditingController _uriController = TextEditingController(
     text: 'spotify:track:4cOdK2wGLETKBW3PvgPWqT', // Never Gonna Give You Up
   );
 
-  // Progress ticker for smooth playback progress
   Timer? _progressTicker;
 
   @override
   void initState() {
     super.initState();
-    _setupListeners();
-    _initialize();
-  }
-
-  /// Sets up auth and playback state listeners
-  void _setupListeners() {
-    _authSub = _spotikit.onAuthStateChanged.listen(_handleAuthState);
     _playbackSub = _spotikit.onPlaybackStateChanged.listen((state) {
       setState(() => _playbackState = state);
     });
+    _initialize();
   }
 
-  /// Handles authentication state changes
-  void _handleAuthState(AuthState state) {
-    setState(() => _authState = state);
-
-    switch (state) {
-      case AuthSuccess():
-        _showSnackBar('✓ Authenticated successfully', isSuccess: true);
-        _connectToRemote();
-      case AuthFailure(:final error, :final message):
-        _showSnackBar('Authentication failed: ${message ?? error}');
-      case AuthCancelled():
-        _showSnackBar('Authentication cancelled');
-    }
-  }
-
-  /// Initialize Spotikit with credentials from .env
+  /// Initialize Spotikit and connect to the App Remote.
   Future<void> _initialize() async {
     if (_isInitialized) return;
-
     setState(() => _isLoading = true);
-
     try {
-      //TODO: PASTE YOUR CREDENTIALS IN .env FILE OR REPLACE BELOW WITH STRINGS
-      final clientId = dotenv.env['SPOTIFY_CLIENT_ID'] ?? '';
-      final redirectUri = dotenv.env['SPOTIFY_REDIRECT_URI'] ?? '';
-      final clientSecret = dotenv.env['SPOTIFY_CLIENT_SECRET'] ?? '';
-
-      if (clientId.isEmpty || redirectUri.isEmpty || clientSecret.isEmpty) {
-        _showSnackBar('Missing credentials in .env file');
-        return;
-      }
-
       _spotikit.configureLogging(loggingEnabled: true);
 
       await _spotikit.initialize(
-        clientId: clientId,
-        redirectUri: redirectUri,
-        clientSecret: clientSecret,
+        clientId: _clientId,
+        redirectUri: _redirectUri,
       );
 
       setState(() => _isInitialized = true);
-      await _spotikit.authenticateSpotify();
+      await _connectToRemote();
     } catch (e) {
       _showSnackBar('Initialization failed: $e');
     } finally {
@@ -126,7 +85,6 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     }
   }
 
-  /// Connect to Spotify App Remote
   Future<void> _connectToRemote() async {
     setState(() => _isLoading = true);
     try {
@@ -143,7 +101,6 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     }
   }
 
-  /// Starts a timer to update progress bar smoothly
   void _startProgressTicker() {
     _progressTicker?.cancel();
     _progressTicker = Timer.periodic(const Duration(milliseconds: 200), (_) {
@@ -153,7 +110,6 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     });
   }
 
-  /// Shows a snackbar with the given message
   void _showSnackBar(String message, {bool isSuccess = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -166,7 +122,6 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     );
   }
 
-  // Playback Controls
   Future<void> _togglePlayPause() async {
     if (_playbackState == null) return;
     if (_playbackState!.isPaused) {
@@ -191,26 +146,10 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     await _spotikit.playUri(spotifyUri: uri);
   }
 
-  Future<void> _searchAndPlay() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) {
-      _showSnackBar('Please enter a search query');
-      return;
-    }
-    setState(() => _isLoading = true);
-    try {
-      await _spotikit.playSong(query: query);
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
   @override
   void dispose() {
-    _authSub?.cancel();
     _playbackSub?.cancel();
     _progressTicker?.cancel();
-    _searchController.dispose();
     _uriController.dispose();
     super.dispose();
   }
@@ -234,11 +173,9 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
                           _buildNowPlaying(),
                           const SizedBox(height: 20),
                         ],
-                        _buildSearchSection(),
-                        const SizedBox(height: 16),
                         _buildPlayByUriSection(),
                         const SizedBox(height: 24),
-                        _buildQuickActions(),
+                        _buildQuickPlay(),
                       ],
                     ),
                   ),
@@ -305,26 +242,13 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
   }
 
   Widget _buildConnectionStatus() {
-    final authStatus = switch (_authState) {
-      AuthSuccess() => ('Authenticated', Colors.green),
-      AuthFailure() => ('Auth Failed', Colors.red),
-      AuthCancelled() => ('Auth Cancelled', Colors.orange),
-      _ => ('Not Authenticated', Colors.grey),
-    };
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             _StatusIndicator(
-              label: 'Auth',
-              status: authStatus.$1,
-              color: authStatus.$2,
-            ),
-            const SizedBox(width: 24),
-            _StatusIndicator(
-              label: 'Remote',
+              label: 'App Remote',
               status: _isRemoteConnected ? 'Connected' : 'Disconnected',
               color: _isRemoteConnected ? Colors.green : Colors.grey,
             ),
@@ -343,7 +267,6 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Album art and track info
           Row(
             children: [
               // Album artwork
@@ -370,31 +293,25 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ps.isPaused
-                                  ? Colors.orange.withValues(alpha: 0.2)
-                                  : Colors.green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              ps.isPaused ? 'PAUSED' : 'NOW PLAYING',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: ps.isPaused
-                                    ? Colors.orange
-                                    : Colors.green,
-                              ),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ps.isPaused
+                              ? Colors.orange.withValues(alpha: 0.2)
+                              : Colors.green.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          ps.isPaused ? 'PAUSED' : 'NOW PLAYING',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: ps.isPaused ? Colors.orange : Colors.green,
                           ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -408,9 +325,10 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
                       Text(
                         ps.artist,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.7),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.7),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -507,42 +425,6 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     );
   }
 
-  Widget _buildSearchSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Search & Play',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Artist, song, or album...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.play_arrow),
-                  onPressed: _searchAndPlay,
-                ),
-              ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _searchAndPlay(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildPlayByUriSection() {
     return Card(
       child: Padding(
@@ -552,9 +434,10 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
           children: [
             Text(
               'Play by URI',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -578,7 +461,15 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickPlay() {
+    final tracks = [
+      ('Never Gonna Give You Up', 'spotify:track:4cOdK2wGLETKBW3PvgPWqT'),
+      ('Bohemian Rhapsody', 'spotify:track:7tFiyTwD0nx5a1eklYtX2J'),
+      ('Blinding Lights', 'spotify:track:0VjIjW4GlUZAMYd2vXMi3b'),
+      ('Shape of You', 'spotify:track:7qiZfU4dY1lWllzX7mPBI3'),
+      ('Bad Guy', 'spotify:track:2Fxmhks0bxGSBdJ92vM42m'),
+    ];
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -587,36 +478,25 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
           children: [
             Text(
               'Quick Play',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: [
-                _QuickPlayChip(
-                  label: 'Bohemian Rhapsody',
-                  onTap: () =>
-                      _spotikit.playSong(query: 'Bohemian Rhapsody Queen'),
-                ),
-                _QuickPlayChip(
-                  label: 'Blinding Lights',
-                  onTap: () =>
-                      _spotikit.playSong(query: 'Blinding Lights The Weeknd'),
-                ),
-                _QuickPlayChip(
-                  label: 'Shape of You',
-                  onTap: () =>
-                      _spotikit.playSong(query: 'Shape of You Ed Sheeran'),
-                ),
-                _QuickPlayChip(
-                  label: 'Bad Guy',
-                  onTap: () =>
-                      _spotikit.playSong(query: 'Bad Guy Billie Eilish'),
-                ),
-              ],
+              children: tracks
+                  .map(
+                    (t) => ActionChip(
+                      avatar: const Icon(Icons.play_arrow, size: 18),
+                      label: Text(t.$1),
+                      onPressed: () =>
+                          _spotikit.playUri(spotifyUri: t.$2),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -645,7 +525,7 @@ class _LoadingView extends StatelessWidget {
         children: [
           CircularProgressIndicator(),
           SizedBox(height: 16),
-          Text('Initializing Spotikit...'),
+          Text('Connecting to Spotify...'),
         ],
       ),
     );
@@ -671,9 +551,10 @@ class _StatusIndicator extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: 4),
@@ -687,29 +568,14 @@ class _StatusIndicator extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               status,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w500),
             ),
           ],
         ),
       ],
-    );
-  }
-}
-
-class _QuickPlayChip extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _QuickPlayChip({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: const Icon(Icons.play_arrow, size: 18),
-      label: Text(label),
-      onPressed: onTap,
     );
   }
 }
