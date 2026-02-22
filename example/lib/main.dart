@@ -4,7 +4,7 @@ import 'package:spotikit/models/spotify/playback_state.dart';
 import 'package:spotikit/spotikit.dart';
 
 // TODO: Replace with your own credentials from https://developer.spotify.com/dashboard
-const String _clientId = 'YOUR_CLIENT_ID';
+const String _clientId = 'your_spotify_client_id';
 const String _redirectUri = 'spotify-sdk://auth';
 
 void main() async {
@@ -465,9 +465,9 @@ class _SpotikitHomePageState extends State<SpotikitHomePage> {
     final tracks = [
       ('Never Gonna Give You Up', 'spotify:track:4cOdK2wGLETKBW3PvgPWqT'),
       ('Bohemian Rhapsody', 'spotify:track:7tFiyTwD0nx5a1eklYtX2J'),
-      ('Blinding Lights', 'spotify:track:0VjIjW4GlUZAMYd2vXMi3b'),
-      ('Shape of You', 'spotify:track:7qiZfU4dY1lWllzX7mPBI3'),
-      ('Bad Guy', 'spotify:track:2Fxmhks0bxGSBdJ92vM42m'),
+      ("Hit'Em Up", 'spotify:track:0Z2J91b2iTGLVTZC4fKgxf'),
+      ('Devil In A New Dress', 'spotify:track:1UGD3lW3tDmgZfAVDh6w7r'),
+      ('Who Shot Ya?', 'spotify:track:2kM3gIkHRiikiaIUFk3Fje'),
     ];
 
     return Card(

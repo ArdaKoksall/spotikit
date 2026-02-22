@@ -35,7 +35,7 @@ A Flutter plugin for controlling Spotify playback on Android via the **Spotify A
 3. Add a redirect URI (e.g. `your.app://callback`) in the dashboard.
 4. The Spotify app **must be installed** on the device.
 
-> No client secret is needed — Spotikit uses the App Remote SDK only.
+> No client secret is needed. Spotikit handles the OAuth flow automatically via the Spotify Auth SDK — it opens the Spotify login screen on first use, then connects the App Remote.
 
 ---
 
@@ -96,6 +96,8 @@ void main() async {
     redirectUri: 'your.app://callback',
   );
 
+  // Opens the Spotify login screen (if not already authorized),
+  // then connects the App Remote automatically.
   await spotikit.connectToSpotify();
 
   await spotikit.playUri(spotifyUri: 'spotify:track:4cOdK2wGLETKBW3PvgPWqT');
@@ -212,6 +214,10 @@ Common error codes from native:
 | `NOT_INIT`             | `connectToSpotify` called before `initialize`  |
 | `INIT_FAILED`          | Missing `clientId` or `redirectUri`            |
 | `NO_TRACK`             | `getTrackInfo` called while nothing is playing |
+| `AUTH_ERROR`           | Spotify OAuth authorization failed             |
+| `AUTH_CANCELLED`       | User cancelled the Spotify login screen        |
+| `AUTH_IN_PROGRESS`     | `connectToSpotify` called while auth is already running |
+| `NO_ACTIVITY`          | No Android Activity available to launch the auth screen |
 
 ---
 

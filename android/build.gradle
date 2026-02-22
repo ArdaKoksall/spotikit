@@ -62,6 +62,10 @@ android {
 
 dependencies {
     api project(':spotify-app-remote')
+    api project(':spotify-auth')
+
+    // Gson is required by the Spotify App Remote SDK
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // Test dependencies
     testImplementation("org.jetbrains.kotlin:kotlin-test")

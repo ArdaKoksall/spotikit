@@ -1,3 +1,26 @@
+## 2.0.3
+### 🔐 Full OAuth Auth Flow — February 22, 2026
+
+- Introduced `AuthManager.kt` — handles the full Spotify OAuth flow using the `spotify-auth` SDK before connecting the App Remote
+- `SpotikitPlugin` now registers `AuthManager` as a `PluginRegistry.ActivityResultListener` to receive the OAuth result
+- `connectToSpotify()` now triggers `AuthorizationClient.openLoginActivity()` first; on success the App Remote connection is established automatically
+- Added required OAuth scopes: `streaming`, `user-read-playback-state`, `user-modify-playback-state`, `user-read-currently-playing`
+- Added `spotify-auth` as an `api` dependency in `android/build.gradle`
+- Registered `com.spotify.sdk.android.auth.LoginActivity` in the example app's `AndroidManifest.xml`
+- Added `isConnected()` helper to `RemoteManager` to skip re-auth when already connected
+- Fixes `UserNotAuthorizedException` — "Explicit user authorization is required to use Spotify"
+
+---
+
+## 2.0.2
+### 🐛 Gson & Activity Context Fix — February 22, 2026
+
+- Added `com.google.code.gson:gson:2.10.1` to `android/build.gradle`
+- Fixes `NoClassDefFoundError: Lcom/google/gson/GsonBuilder` — the Spotify App Remote SDK requires Gson at runtime but does not bundle it
+- `RemoteManager` now uses the Activity context (when available) for `SpotifyAppRemote.connect()` so that `showAuthView(true)` can launch UI
+
+---
+
 ## 2.0.1
 ### 🛠 Example App Update — February 22, 2026
 

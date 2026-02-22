@@ -15,6 +15,7 @@ class SpotikitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     companion object {
         private const val CHANNEL_NAME = "spotikit"
+        private const val TAG = "SpotikitPlugin"
     }
 
     private lateinit var channel: MethodChannel
@@ -22,6 +23,7 @@ class SpotikitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     // Managers
     private lateinit var remoteManager: RemoteManager
+    private val authManager = AuthManager()
 
     // Activity State
     private var activity: Activity? = null
@@ -59,10 +61,30 @@ class SpotikitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
             "connectToSpotify" -> {
-                if (clientId != null && redirectUri != null) {
-                    remoteManager.connect(clientId!!, redirectUri!!, result)
-                } else {
+                val id = clientId
+                val uri = redirectUri
+                val act = activity
+
+                if (id == null || uri == null) {
                     result.error("NOT_INIT", "Call initialize first", null)
+                    return
+                }
+
+                // If already connected, skip auth
+                if (remoteManager.isConnected()) {
+                    result.success("Already connected")
+                    return
+                }
+
+                if (act == null) {
+                    result.error("NO_ACTIVITY", "No activity available", null)
+                    return
+                }
+
+                // Step 1: OAuth auth flow → Step 2: App Remote connect
+                authManager.authorize(act, id, uri, result) { _token ->
+                    Log.d(TAG, "Auth succeeded, connecting App Remote")
+                    remoteManager.connect(id, uri, result)
                 }
             }
             "logout" -> {
@@ -88,11 +110,15 @@ class SpotikitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         activityBinding = binding
+        remoteManager.activity = binding.activity
+        binding.addActivityResultListener(authManager)
     }
 
     override fun onDetachedFromActivity() {
+        activityBinding?.removeActivityResultListener(authManager)
         activity = null
         activityBinding = null
+        remoteManager.activity = null
         remoteManager.disconnect()
     }
 

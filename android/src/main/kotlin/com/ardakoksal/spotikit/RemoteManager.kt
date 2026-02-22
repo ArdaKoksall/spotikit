@@ -12,12 +12,17 @@ import io.flutter.plugin.common.MethodChannel
 
 class RemoteManager(private val context: Context, private val methodChannel: MethodChannel) {
 
+    // Activity context needed so showAuthView(true) can launch the auth screen.
+    var activity: android.app.Activity? = null
+
     companion object {
         private const val TAG = "RemoteManager"
     }
 
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private var playerStateSubscription: Subscription<PlayerState>? = null
+
+    fun isConnected(): Boolean = spotifyAppRemote?.isConnected == true
 
     fun connect(clientId: String, redirectUri: String, result: MethodChannel.Result) {
         if (!isSpotifyInstalled()) {
@@ -35,7 +40,8 @@ class RemoteManager(private val context: Context, private val methodChannel: Met
             .showAuthView(true)
             .build()
 
-        SpotifyAppRemote.connect(context, params, object : Connector.ConnectionListener {
+        val connectContext: Context = activity ?: context
+        SpotifyAppRemote.connect(connectContext, params, object : Connector.ConnectionListener {
             override fun onConnected(appRemote: SpotifyAppRemote) {
                 spotifyAppRemote = appRemote
                 Log.d(TAG, "Connected to Spotify App Remote")
