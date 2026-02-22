@@ -12,7 +12,7 @@ All Spotify Web API functionality and OAuth authentication have been removed.
 - **Removed streams:** `accessTokenStream`, `onAuthStateChanged`
 - **Removed models:** `SpotifyTrack`, `AlbumImage`, `AuthState` (and subclasses `AuthSuccess`, `AuthFailure`, `AuthCancelled`)
 - **Removed Dart package:** `api/spotify_api.dart` (SpotifyApi class)
-- **Removed pub dependencies:** `dio`, `http`, `path`, `yaml`
+- **Removed pub dependencies:** `dio`, `path`, `yaml`
 
 #### Changes
 
