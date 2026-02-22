@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:spotikit/models/auth_state.dart';
 import 'package:spotikit/models/spotify/playback_state.dart';
 import 'package:spotikit/models/spotify/spotify_track_info.dart';
 
@@ -11,15 +10,8 @@ import 'spotikit_platform_interface.dart';
 class MethodChannelSpotikit extends SpotikitPlatform {
   static const MethodChannel _channel = MethodChannel('spotikit');
 
-  static const EventChannel _tokenEventChannel = EventChannel(
-    'spotikit/token_stream',
-  );
-
-  Stream<String?>? _accessTokenStream;
   final StreamController<SpotifyPlaybackState> _playbackController =
       StreamController<SpotifyPlaybackState>.broadcast();
-  final StreamController<AuthState> _authController =
-      StreamController<AuthState>.broadcast();
 
   bool _isMethodCallHandlerSet = false;
 
@@ -42,30 +34,9 @@ class MethodChannelSpotikit extends SpotikitPlatform {
           _playbackController.add(state);
         } catch (_) {}
         break;
-      case 'spotifyAuthSuccess':
-        final args = call.arguments as Map;
-        _authController.add(AuthSuccess(args['accessToken'] as String));
-        break;
-      case 'spotifyAuthFailed':
-        final args = call.arguments as Map;
-        final error = args['error'] as String;
-        if (error == 'cancelled') {
-          _authController.add(AuthCancelled());
-        } else {
-          _authController.add(AuthFailure(error, args['message'] as String?));
-        }
-        break;
       default:
         break;
     }
-  }
-
-  @override
-  Stream<String?> get accessTokenStream {
-    _accessTokenStream ??= _tokenEventChannel.receiveBroadcastStream().map(
-      (dynamic event) => event as String?,
-    );
-    return _accessTokenStream!;
   }
 
   @override
@@ -73,26 +44,16 @@ class MethodChannelSpotikit extends SpotikitPlatform {
       _playbackController.stream;
 
   @override
-  Stream<AuthState> get authStateStream => _authController.stream;
-
-  @override
   Future<void> initialize({
     required String clientId,
     required String redirectUri,
-    required String clientSecret,
-    required String scope,
-    required bool authenticate,
     required bool connectToRemote,
   }) async {
     await _channel.invokeMethod('initialize', {
       'clientId': clientId,
       'redirectUri': redirectUri,
-      'clientSecret': clientSecret,
-      'scope': scope,
-      'authenticate': authenticate,
       'connectToRemote': connectToRemote,
     });
-    if (authenticate) await authenticateSpotify();
     if (connectToRemote) await connectToSpotify();
   }
 
@@ -105,25 +66,6 @@ class MethodChannelSpotikit extends SpotikitPlatform {
       return result == "Connected" || result == "Already connected";
     } catch (_) {
       rethrow;
-    }
-  }
-
-  @override
-  Future<bool> authenticateSpotify() async {
-    try {
-      await _channel.invokeMethod(_Methods.authenticateSpotify);
-      return true;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<String?> getAccessToken() async {
-    try {
-      return await _channel.invokeMethod<String>(_Methods.getAccessToken);
-    } catch (e) {
-      return null;
     }
   }
 
@@ -223,8 +165,6 @@ class MethodChannelSpotikit extends SpotikitPlatform {
 
 class _Methods {
   static const String connectToSpotify = 'connectToSpotify';
-  static const String authenticateSpotify = 'authenticateSpotify';
-  static const String getAccessToken = 'getAccessToken';
   static const String play = 'play';
   static const String pause = 'pause';
   static const String resume = 'resume';

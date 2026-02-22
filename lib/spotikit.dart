@@ -4,9 +4,6 @@ import 'dart:async';
 import 'package:logger/logger.dart';
 import 'package:spotikit/models/spotikit_exception.dart';
 
-import 'api/spotify_api.dart';
-import 'models/auth_state.dart';
-import 'models/spotify/spotify_track.dart';
 import 'models/spotify/spotify_track_info.dart';
 import 'models/spotify/playback_state.dart';
 import 'platform/spotikit_platform_interface.dart';
@@ -23,66 +20,38 @@ export 'platform/spotikit_method_channel.dart';
 /// await Spotikit.instance.initialize(
 ///   clientId: 'your_client_id',
 ///   redirectUri: 'your_redirect_uri',
-///   clientSecret: 'your_client_secret',
 /// );
 /// ```
 class Spotikit {
   static final Spotikit instance = Spotikit.internal();
   factory Spotikit() => instance;
 
-  Spotikit.internal() {
-    accessTokenStream.listen((token) {
-      _api.setAccessToken(token);
-    }, onError: (_) {});
-  }
+  Spotikit.internal();
 
   final _SpotikitLog _log = _SpotikitLog();
 
-  final SpotifyApi _api = SpotifyApi();
-
-  /// Access to the Spotify Web API wrapper.
-  SpotifyApi get api => _api;
-
   SpotikitPlatform get _platform => SpotikitPlatform.instance;
-
-  /// Stream of access tokens from the native platform.
-  Stream<String?> get accessTokenStream => _platform.accessTokenStream;
-
-  /// Stream of authentication state updates from the native platform.
-  Stream<AuthState> get onAuthStateChanged => _platform.authStateStream;
 
   /// Stream of playback state updates from the native platform.
   Stream<SpotifyPlaybackState> get onPlaybackStateChanged =>
       _platform.playbackStateStream;
 
-  static const String _defaultScope =
-      "user-read-playback-state user-modify-playback-state user-read-currently-playing app-remote-control streaming playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-library-modify user-library-read user-top-read user-read-playback-position user-read-recently-played user-follow-read user-follow-modify user-read-email user-read-private";
-
   /// Initializes the Spotikit plugin with the required configuration.
   ///
   /// [clientId] - Spotify application client ID
-  /// [redirectUri] - OAuth redirect URI
-  /// [clientSecret] - Spotify application client secret
-  /// [scope] - OAuth scopes for authorization (defaults to all common scopes)
-  /// [authenticate] - Whether to start authentication immediately
+  /// [redirectUri] - OAuth redirect URI used by the Spotify App Remote
   /// [connectToRemote] - Whether to connect to Spotify App Remote immediately
   ///
   /// Throws [SpotikitException] if initialization fails.
   Future<void> initialize({
     required String clientId,
     required String redirectUri,
-    required String clientSecret,
-    String scope = _defaultScope,
-    bool authenticate = false,
     bool connectToRemote = false,
   }) async {
     try {
       await _platform.initialize(
         clientId: clientId,
         redirectUri: redirectUri,
-        clientSecret: clientSecret,
-        scope: scope,
-        authenticate: authenticate,
         connectToRemote: connectToRemote,
       );
       _log.log("Spotikit initialized successfully.");
@@ -119,32 +88,6 @@ class Spotikit {
       _log.error('Unexpected error: $e');
     }
     return false;
-  }
-
-  /// Initiates the Spotify OAuth authentication flow.
-  ///
-  /// This will open the Spotify app or a web view to authenticate the user.
-  Future<void> authenticateSpotify() async {
-    try {
-      final result = await _platform.authenticateSpotify();
-      if (result) {
-        _log.log("Spotify authentication started.");
-      }
-    } catch (e) {
-      _log.error("Error during Spotify authentication: $e");
-    }
-  }
-
-  /// Retrieves the current access token.
-  ///
-  /// Returns `null` if no token is available.
-  Future<String?> getAccessToken() async {
-    try {
-      return await _platform.getAccessToken();
-    } catch (e) {
-      _log.error("Error retrieving access token: $e");
-      return null;
-    }
   }
 
   /// Plays the specified Spotify URI.
@@ -194,40 +137,14 @@ class Spotikit {
     }
   }
 
-  /// Gets basic information about the currently playing track.
+  /// Gets basic information about the currently playing track from the App Remote.
   ///
   /// Returns `null` if no track is playing.
   Future<SpotifyTrackInfo?> getPlayingTrackInfo() async {
     try {
       return await _platform.getPlayingTrackInfo();
     } catch (e) {
-      _log.error("Error retrieving basic track info: $e");
-      return null;
-    }
-  }
-
-  /// Gets full track information from Spotify Web API.
-  ///
-  /// This includes additional details like album images, popularity, etc.
-  /// Requires a valid access token.
-  ///
-  /// Returns `null` if no track is playing or if the API call fails.
-  Future<SpotifyTrack?> getPlayingTrackFull() async {
-    try {
-      final trackInfo = await _platform.getPlayingTrackInfo();
-      if (trackInfo == null) return null;
-
-      final id = trackInfo.uri.split(":").last;
-
-      final SpotifyTrack? track = await _api.getTrackById(id: id);
-      if (track == null) {
-        _log.error("Failed to fetch full track info from Spotify API.");
-        return null;
-      }
-
-      return track;
-    } catch (e) {
-      _log.error("Error retrieving full track info: $e");
+      _log.error("Error retrieving track info: $e");
       return null;
     }
   }
@@ -293,24 +210,6 @@ class Spotikit {
       await _platform.skipBackward(seconds: seconds);
     } catch (e) {
       _log.error("Error during skipBackward: $e");
-    }
-  }
-
-  /// Plays a song by searching for it using the Spotify Web API.
-  ///
-  /// [query] - Search query (e.g., "Shape of You Ed Sheeran")
-  Future<void> playSong({required String query}) async {
-    try {
-      final searchResult = await _api.searchAndGetFirstTrackId(query: query);
-
-      if (searchResult == null) {
-        _log.error("No track found for query: $query");
-        return;
-      }
-
-      await playUri(spotifyUri: "spotify:track:$searchResult");
-    } catch (e) {
-      _log.error("Error during playSong: $e");
     }
   }
 }

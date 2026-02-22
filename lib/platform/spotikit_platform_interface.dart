@@ -1,6 +1,5 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import '../models/auth_state.dart';
 import '../models/spotify/playback_state.dart';
 import '../models/spotify/spotify_track_info.dart';
 import 'spotikit_method_channel.dart';
@@ -33,27 +32,17 @@ abstract class SpotikitPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  /// Stream of access tokens from the native platform.
-  Stream<String?> get accessTokenStream;
-
   /// Stream of playback state updates from the native platform.
   Stream<SpotifyPlaybackState> get playbackStateStream;
-
-  /// Stream of authentication state updates from the native platform.
-  Stream<AuthState> get authStateStream;
 
   /// Initializes the Spotikit plugin with the required configuration.
   ///
   /// [clientId] - Spotify application client ID
-  /// [redirectUri] - OAuth redirect URI
-  /// [clientSecret] - Spotify application client secret
-  /// [scope] - OAuth scopes for authorization
+  /// [redirectUri] - OAuth redirect URI used by the Spotify App Remote
+  /// [connectToRemote] - Whether to connect to Spotify App Remote immediately
   Future<void> initialize({
     required String clientId,
     required String redirectUri,
-    required String clientSecret,
-    required String scope,
-    required bool authenticate,
     required bool connectToRemote,
   }) {
     throw UnimplementedError('initialize() has not been implemented.');
@@ -64,20 +53,6 @@ abstract class SpotikitPlatform extends PlatformInterface {
   /// Returns `true` if connection was successful or already connected.
   Future<bool> connectToSpotify() {
     throw UnimplementedError('connectToSpotify() has not been implemented.');
-  }
-
-  /// Initiates the Spotify OAuth authentication flow.
-  ///
-  /// Returns `true` if authentication was initiated successfully.
-  Future<bool> authenticateSpotify() {
-    throw UnimplementedError('authenticateSpotify() has not been implemented.');
-  }
-
-  /// Retrieves the current access token.
-  ///
-  /// Returns `null` if no token is available.
-  Future<String?> getAccessToken() {
-    throw UnimplementedError('getAccessToken() has not been implemented.');
   }
 
   /// Plays the specified Spotify URI.

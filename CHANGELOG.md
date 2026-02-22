@@ -1,7 +1,55 @@
-## 1.0.0
-### 🎉 First Stable Release - January 23, 2026
+## 2.0.0
+### 🚀 App Remote Only — February 22, 2026
 
-This marks the first stable release of Spotikit! The plugin is now production-ready for Android.
+This is a **breaking change** release. Spotikit now wraps **only** the Spotify App Remote SDK.
+All Spotify Web API functionality and OAuth authentication have been removed.
+
+#### ⚠️ Breaking Changes
+
+- **`initialize()`** no longer accepts `clientSecret`, `scope`, or `authenticate` parameters.
+  Only `clientId`, `redirectUri`, and the optional `connectToRemote` flag remain.
+- **Removed methods:** `authenticateSpotify()`, `getAccessToken()`, `getPlayingTrackFull()`, `playSong()`
+- **Removed streams:** `accessTokenStream`, `onAuthStateChanged`
+- **Removed models:** `SpotifyTrack`, `AlbumImage`, `AuthState` (and subclasses `AuthSuccess`, `AuthFailure`, `AuthCancelled`)
+- **Removed Dart package:** `api/spotify_api.dart` (SpotifyApi class)
+- **Removed pub dependencies:** `dio`, `http`, `path`, `yaml`
+
+#### Changes
+
+- `initialize()` now only requires `clientId` and `redirectUri`
+- `SpotikitPlugin.kt` stripped of all auth code — no more `AuthManager`, `EventChannel`, or `PluginRegistry.ActivityResultListener`
+- `AuthManager.kt` deleted
+- `android/build.gradle` now only depends on `spotify-app-remote` (removed `spotify-auth`, `okhttp3`, `kotlinx-coroutines`, `gson`, `security-crypto`)
+
+#### Migration Guide
+
+Before (v1.x):
+```dart
+await spotikit.initialize(
+  clientId: 'id',
+  clientSecret: 'secret',
+  redirectUri: 'myapp://callback',
+  scope: 'user-read-playback-state ...',
+);
+spotikit.onAuthStateChanged.listen((state) { ... });
+await spotikit.authenticateSpotify();
+```
+
+After (v2.x):
+```dart
+await spotikit.initialize(
+  clientId: 'id',
+  redirectUri: 'myapp://callback',
+);
+await spotikit.connectToSpotify();
+```
+
+---
+
+## 1.0.0
+### 🎉 First Stable Release — January 23, 2026
+
+This marks the first stable release of Spotikit.
 
 #### Features
 - **Authentication**: Full Authorization Code flow with automatic token refresh
@@ -15,17 +63,8 @@ This marks the first stable release of Spotikit! The plugin is now production-re
 - ✅ Android (App Remote SDK + Web API)
 - ⏳ iOS (planned for future release)
 
-#### Highlights
-- Clean Dart API with stream-based state management
-- Automatic token lifecycle management
-- Easy-to-use initialization scripts for Android setup
-- Comprehensive documentation and example app
-
-#### Breaking Changes from 0.x
-- None - this is the first stable API
-
 ---
 
 ## 0.0.24
-### Demo Release24
+### Demo Release
 - First good release I hope.
